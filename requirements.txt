@@ -3,3 +3,5 @@ PyYAML~=6.0
 requests~=2.34
 backoff~=2.2
 rich~=15.0
+numpy==1.26.0
+pandas==2.2.2
