@@ -1,28 +1,22 @@
 import numpy as np
 import pytest
 
-from pandas.compat import is_platform_arm
-
-import pandas as pd
-import pandas._testing as tm
-from pandas.util.version import Version
-
-pytestmark = [pytest.mark.single_cpu]
-
-numba = pytest.importorskip("numba")
-pytestmark.append(
-    pytest.mark.skipif(
-        Version(numba.__version__) == Version("0.61") and is_platform_arm(),
-        reason=f"Segfaults on ARM platforms with numba {numba.__version__}",
-    )
+from pandas import (
+    DataFrame,
+    Series,
 )
+import pandas._testing as tm
+
+pytestmark = pytest.mark.single_cpu
+
+pytest.importorskip("numba")
 
 
 @pytest.mark.filterwarnings("ignore")
 # Filter warnings when parallel=True and the function can't be parallelized by Numba
 class TestEWM:
     def test_invalid_update(self):
-        df = pd.DataFrame({"a": range(5), "b": range(5)})
+        df = DataFrame({"a": range(5), "b": range(5)})
         online_ewm = df.head(2).ewm(0.5).online()
         with pytest.raises(
             ValueError,
@@ -32,17 +26,13 @@ class TestEWM:
 
     @pytest.mark.slow
     @pytest.mark.parametrize(
-        "obj",
-        [
-            pd.DataFrame({"a": range(5), "b": range(5)}),
-            # GH#66522 online mean ignored the decay for single-column frames
-            pd.DataFrame({"a": range(5)}),
-            pd.Series(range(5), name="foo"),
-        ],
+        "obj", [DataFrame({"a": range(5), "b": range(5)}), Series(range(5), name="foo")]
     )
-    def test_online_vs_non_online_mean(self, obj, nogil, parallel, adjust, ignore_na):
+    def test_online_vs_non_online_mean(
+        self, obj, nogil, parallel, nopython, adjust, ignore_na
+    ):
         expected = obj.ewm(0.5, adjust=adjust, ignore_na=ignore_na).mean()
-        engine_kwargs = {"nogil": nogil, "parallel": parallel}
+        engine_kwargs = {"nogil": nogil, "parallel": parallel, "nopython": nopython}
 
         online_ewm = (
             obj.head(2)
@@ -61,13 +51,12 @@ class TestEWM:
 
     @pytest.mark.xfail(raises=NotImplementedError)
     @pytest.mark.parametrize(
-        "obj",
-        [pd.DataFrame({"a": range(5), "b": range(5)}), pd.Series(range(5), name="foo")],
+        "obj", [DataFrame({"a": range(5), "b": range(5)}), Series(range(5), name="foo")]
     )
     def test_update_times_mean(
-        self, obj, nogil, parallel, adjust, ignore_na, halflife_with_times
+        self, obj, nogil, parallel, nopython, adjust, ignore_na, halflife_with_times
     ):
-        times = pd.Series(
+        times = Series(
             np.array(
                 ["2020-01-01", "2020-01-05", "2020-01-07", "2020-01-17", "2020-01-21"],
                 dtype="datetime64[ns]",
@@ -81,7 +70,7 @@ class TestEWM:
             halflife=halflife_with_times,
         ).mean()
 
-        engine_kwargs = {"nogil": nogil, "parallel": parallel}
+        engine_kwargs = {"nogil": nogil, "parallel": parallel, "nopython": nopython}
         online_ewm = (
             obj.head(2)
             .ewm(
@@ -105,7 +94,7 @@ class TestEWM:
 
     @pytest.mark.parametrize("method", ["aggregate", "std", "corr", "cov", "var"])
     def test_ewm_notimplementederror_raises(self, method):
-        ser = pd.Series(range(10))
+        ser = Series(range(10))
         kwargs = {}
         if method == "aggregate":
             kwargs["func"] = lambda x: x
