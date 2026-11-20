@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Patricia Analysis</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/Patricia_logo.png') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+  <div class="layout">
+
+    <!-- ── Left sidebar: engine controls + analysis output ── -->
+    <aside class="sidebar sidebar-left">
+      <div class="brand">
+        <img src="{{ url_for('static', filename='images/Patricia_logo.png') }}" class="brand-logo" alt="Patricia">
+        <div class="brand-text">
+          <div class="brand-name">Patricia</div>
+          <div class="brand-sub">Analysis</div>
+        </div>
+        <button class="about-btn" onclick="showAbout()" title="Info">?</button>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Settings</div>
+
+        <div class="control">
+          <label class="control-label">Lines<span class="control-value" id="multipv-val">3</span></label>
+          <input type="range" id="multipv-slider" min="1" max="5" step="1" value="3"
+                 oninput="document.getElementById('multipv-val').textContent=this.value">
+        </div>
+        <div class="control">
+          <label class="control-label">Hash<span class="control-value"><span id="hash-val">32</span> MB</span></label>
+          <input type="range" id="hash-slider" min="0" max="10" step="1" value="5"
+                 oninput="document.getElementById('hash-val').textContent=Math.pow(2,+this.value)">
+        </div>
+        <div class="control">
+          <label class="control-label">Threads<span class="control-value" id="threads-val">1</span></label>
+          <input type="range" id="threads-slider" min="1" max="1" step="1" value="1"
+                 oninput="document.getElementById('threads-val').textContent=this.value">
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" id="analyse-btn" onclick="runAnalysis()">Analyze</button>
+          <button class="btn btn-danger"  id="cancel-btn"  onclick="stopAnalysis()" style="display:none">Stop Analysis</button>
+        </div>
+      </div>
+
+      <div class="panel panel-flex" id="engine-lines">
+        <div class="panel-title panel-title-row">
+          <span>Output</span>
+          <span class="panel-title-meta" id="nps-display"></span>
+        </div>
+        <div id="lines-container" class="lines-container"></div>
+        <div id="engine-hint" class="empty-hint">
+          <div class="empty-hint-icon">🐇</div>
+          <div class="empty-hint-title">Engine idle</div>
+          <div class="empty-hint-sub">Press Analyze to start the engine on the current position</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ── Board ── -->
+    <main class="board-area">
+      <div class="board-wrap">
+        <div class="material-bar" id="material-bar-top"></div>
+        <div class="coords-file" id="coords-file-top"></div>
+        <div class="board-row">
+          <div class="eval-bar-wrap">
+            <div id="eval-bar" class="eval-bar">
+              <div class="eval-bar-black"></div>
+              <div class="eval-bar-white"></div>
+              <div class="eval-bar-divider"></div>
+            </div>
+            <div class="eval-bar-label" id="eval-bar-label"></div>
+          </div>
+          <div class="coords-rank" id="coords-rank-left"></div>
+          <div id="board" class="board"></div>
+          <div class="coords-rank" id="coords-rank-right"></div>
+        </div>
+        <div class="coords-file" id="coords-file-bottom"></div>
+        <div class="material-bar" id="material-bar-bottom"></div>
+      </div>
+    </main>
+
+    <!-- ── Right sidebar: move list + board controls + FEN ── -->
+    <aside class="sidebar sidebar-right">
+      <div class="panel panel-flex" id="move-list-panel">
+        <div class="panel-title panel-title-row">
+          <span>Move list</span>
+          <button class="btn-mini" onclick="clearMoveList()" title="Clear move list">Clear</button>
+        </div>
+        <div class="move-list-wrap" id="move-list-wrap">
+          <div id="move-list" class="move-list mono"></div>
+          <div id="move-list-hint" class="empty-hint">
+            <div class="empty-hint-icon">♟</div>
+            <div class="empty-hint-title">No moves yet</div>
+            <div class="empty-hint-sub">Make a move on the board or load a game to begin</div>
+          </div>
+        </div>
+        <div class="nav-row">
+          <button class="nav-btn" onclick="resetToInitial()" title="Initial position">&#x23EE;</button>
+          <button class="nav-btn" onclick="stepBack()"       title="Previous move">&#x23F4;</button>
+          <button class="nav-btn" onclick="stepForward()"    title="Next move">&#x23F5;</button>
+          <button class="nav-btn" onclick="jumpToTip()"      title="Final position">&#x23ED;</button>
+        </div>
+      </div>
+
+      <!-- ── Board editor panel (shown in edit mode) ── -->
+      <div class="panel" id="editor-panel" style="display:none">
+        <div class="panel-title">Edit Position</div>
+        <div id="editor-palette" class="editor-palette"></div>
+        <p class="editor-hint">Drag pieces onto the board. Right-click a piece or drag it off the board to remove it.</p>
+        <div style="height:1.2rem"></div>
+        <div class="btn-row" style="margin-bottom:1.2rem">
+          <button class="btn btn-primary" id="turn-w-btn" onclick="setEditorTurn('w')">White to move</button>
+          <button class="btn" id="turn-b-btn" onclick="setEditorTurn('b')">Black to move</button>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text3);letter-spacing:0.05em;margin-bottom:4px;text-transform:uppercase">Castling rights</div>
+          <div class="btn-row" style="margin-top:0;flex-wrap:nowrap">
+            <button class="btn castle-btn" data-castle="K" onclick="toggleCastling('K')" title="White kingside (O-O)">K</button>
+            <button class="btn castle-btn" data-castle="Q" onclick="toggleCastling('Q')" title="White queenside (O-O-O)">Q</button>
+            <button class="btn castle-btn" data-castle="k" onclick="toggleCastling('k')" title="Black kingside (O-O)">k</button>
+            <button class="btn castle-btn" data-castle="q" onclick="toggleCastling('q')" title="Black queenside (O-O-O)">q</button>
+          </div>
+        </div>
+        <div style="height:2rem"></div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <button class="btn" onclick="resetEditBoard()">Starting position</button>
+          <button class="btn" onclick="clearEditBoard()">Clear board</button>
+          <div style="height:0.4rem"></div>
+          <button class="btn btn-primary" id="editor-btn" onclick="toggleEditor()" style="width:100%">Confirm board</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Board</div>
+        <div class="btn-row">
+          <button class="btn" onclick="flipBoard()">Flip</button>
+          <button class="btn" id="piece-style-btn" onclick="cyclePieceStyle()">Change Style</button>
+          <button class="btn" id="board-color-btn" onclick="cycleBoardColor()">Change Color</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Position</div>
+        <textarea id="fen-input" class="fen-box mono" rows="3" placeholder="Paste FEN, press Enter"
+                  onkeydown="if(event.key==='Enter'){event.preventDefault();loadFen(this.value);}"></textarea>
+        <div class="btn-row" style="margin-top:8px" id="position-btn-row">
+          <button class="btn btn-primary" id="load-game-btn" onclick="loadGame()">Load Game</button>
+          <button class="btn btn-primary" onclick="enterEditMode()">Set board</button>
+        </div>
+        <div class="btn-row" style="margin-top:6px">
+          <button class="btn" id="export-pgn-btn" onclick="exportPgn()">Export PGN</button>
+          <button class="btn" id="copy-fen-btn"   onclick="copyFen()">Copy FEN</button>
+        </div>
+        <input type="file" id="pgn-input" accept=".pgn,.txt" style="display:none">
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- ── Variation context menu ── -->
+  <div id="var-menu" class="var-menu" style="display:none">
+    <div class="var-menu-item" onclick="promoteVariation()">Promote line</div>
+    <div class="var-menu-item danger" id="var-menu-delete" onclick="deleteVariation()">Delete line</div>
+  </div>
+
+  <!-- ── About modal ── -->
+  <div id="about-modal" class="about-modal" style="display:none" onclick="if(event.target===this)hideAbout()">
+    <div class="about-box">
+      <div class="about-header">
+        <span class="about-title">Info</span>
+        <button class="about-close" onclick="hideAbout()">✕</button>
+      </div>
+      <div class="about-body" id="about-body">Loading…</div>
+    </div>
+  </div>
+
+  <!-- ── Toast notification ── -->
+  <div id="toast" class="toast" style="display:none"></div>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
