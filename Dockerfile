@@ -20,7 +20,8 @@ RUN apt-get update \
 COPY . /app/
 
 # Make Patricia executable
-RUN chmod +x /app/engines/patricia
+RUN chmod +x /app/engines/patricia \
+    && chmod +x /app/engines/_internal/static/patricia/patricia
 
 # Create a virtual environment and set it as the Python environment
 RUN python -m venv /opt/venv
