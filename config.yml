@@ -3,7 +3,7 @@ url: "https://lichess.org/"        # Lichess base URL.
 
 engine:                            # Engine settings.
   dir: "./engines/"                # Directory containing the engine. This can be an absolute path or one relative to lichess-bot/.
-  name: " Patricia"              # Binary name of the engine to use.
+  name: "patricia"                 # Binary name of the engine to use.
   debug: False                     # When enabled, log all startup communication with the engine.
 # interpreter: "java"
 # interpreter_options:
@@ -99,7 +99,7 @@ engine:                            # Engine settings.
     Move Overhead: 100             # Increase if your bot flags games too often.
     Threads: 2                     # Max CPU threads the engine can use.
     Hash: 512                      # Max memory (in megabytes) the engine can allocate.
-    SKill_Level: 20
+    Skill_Level: 20
     SyzygyPath: "./syzygy/"        # Paths to Syzygy endgame tablebases that the engine reads.
     UCI_ShowWDL: true              # Show the chance of the engine winning.
 #   go_commands:                   # Additional options to pass to the UCI go command.
