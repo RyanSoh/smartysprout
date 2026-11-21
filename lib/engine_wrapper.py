@@ -170,31 +170,6 @@ class EngineWrapper:
                                       lichess_bot_tbs,
                                       draw_or_resign_cfg)
 
-        
-        # Custom opening repertoire
-        if not isinstance(best_move, list) and best_move.move is None:
-            if isinstance(self.engine, FillerEngine):
-                opening_function = getattr(
-                    self.engine.main_engine, "get_opening_move", None
-                )
-
-                if opening_function is not None:
-                    opening_uci = opening_function(board)
-
-                    if opening_uci is not None:
-                        opening_move = chess.Move.from_uci(opening_uci)
-
-                        if opening_move in board.legal_moves:
-                            best_move = chess.engine.PlayResult(
-                                opening_move,
-                                None,
-                                info={
-                                    "string": "lichess-bot-source:Custom Opening"
-                                }
-                            )
-                            logger.info(
-                                f"Got move {opening_uci} from custom opening repertoire"
-                            )
 
         # Online sources, only if no earlier source found a move
         if not isinstance(best_move, list) and best_move.move is None:
@@ -962,7 +937,7 @@ def get_opening_explorer_move(li: lichess.Lichess, board: chess.Board, game: mod
     min_time = seconds(opening_explorer_cfg.min_time)
     max_time = seconds(opening_explorer_cfg.max_time)
     source = opening_explorer_cfg.source
-    if (not opening_explorer_cfg.enabled or time_left < min_time or game.clock_initial > max_time or source == "master"
+    if (not opening_explorer_cfg.enabled or time_left < min_time or game.clock_initial > max_time or source == "masters"
             and board.uci_variant != "chess"):
         return None, {}
 
@@ -1018,9 +993,9 @@ def get_opening_explorer_move(li: lichess.Lichess, board: chess.Board, game: mod
         # Rank moves according to the configured sorting preference.
         moves.sort(reverse=True)
 
-        # Randomly select from the five most popular moves.
+        # Randomly select from the eight most popular moves.
         if moves:
-            top_moves = moves[:5]
+            top_moves = moves[:8]
             selected_move = random.choice(top_moves)
             move = selected_move[2]
 
