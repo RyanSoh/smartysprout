@@ -847,9 +847,11 @@ def get_online_move(li: lichess.Lichess, board: chess.Board, game: model.Game, o
     lichess_cloud_cfg = online_moves_cfg.lichess_cloud_analysis
     opening_explorer_cfg = online_moves_cfg.lichess_opening_explorer
 
-    for online_source, cfg in ((get_chessdb_move, chessdb_cfg),
-                               (get_lichess_cloud_move, lichess_cloud_cfg),
-                               (get_opening_explorer_move, opening_explorer_cfg)):
+    for online_source, cfg in (
+        (get_chessdb_move, chessdb_cfg),
+        (get_opening_explorer_move, opening_explorer_cfg),
+        (get_lichess_cloud_move, lichess_cloud_cfg),
+    ):
         best_move, comment = online_source(li, board, game, cfg)
         if best_move:
             return chess.engine.PlayResult(chess.Move.from_uci(best_move), None, comment)
@@ -987,21 +989,47 @@ def get_opening_explorer_move(li: lichess.Lichess, board: chess.Board, game: mod
                 params = {"fen": board.fen(), "moves": 100, "variant": variant, "topGames": 0, "recentGames": 0}
                 response = li.online_book_get("https://explorer.lichess.ovh/lichess", params, authenticated=True)
                 comment = {"string": "lichess-bot-source:Lichess Opening Explorer (Lichess)"}
+        
         moves = []
+
         for possible_move in response["moves"]:
-            games_played = possible_move["white"] + possible_move["black"] + possible_move["draws"]
-            winrate = (possible_move["white"] + possible_move["draws"] * .5) / games_played
+            games_played = (
+                possible_move["white"]
+                + possible_move["black"]
+                + possible_move["draws"]
+            )
+
+            if games_played < opening_explorer_cfg.min_games:
+                continue
+
+            winrate = (
+                possible_move["white"] + possible_move["draws"] * 0.5
+            ) / games_played
+
             if side == "btime":
                 winrate = 1 - winrate
-            if games_played >= opening_explorer_cfg.min_games:
-                # We add both winrate and games_played to the tuple, so that if 2 moves are tied on the first metric,
-                # the second one will be used.
-                moves.append((winrate if opening_explorer_cfg.sort == "winrate" else games_played,
-                              games_played if opening_explorer_cfg.sort == "winrate" else winrate, possible_move["uci"]))
+
+            moves.append((
+                winrate if opening_explorer_cfg.sort == "winrate" else games_played,
+                games_played if opening_explorer_cfg.sort == "winrate" else winrate,
+                possible_move["uci"]
+            ))
+
+        # Rank moves according to the configured sorting preference.
         moves.sort(reverse=True)
-        move = moves[0][2]
-        logger.info(f"Got move {move} from lichess opening explorer ({opening_explorer_cfg.sort}: {moves[0][0]})"
-                    f" for game {game.id}")
+
+        # Randomly select from the five most popular moves.
+        if moves:
+            top_moves = moves[:5]
+            selected_move = random.choice(top_moves)
+            move = selected_move[2]
+
+            logger.info(
+                f"Randomly selected {move} from top {len(top_moves)} "
+                f"moves in Lichess Opening Explorer "
+                f"({opening_explorer_cfg.sort}: {selected_move[0]}) "
+                f"for game {game.id}"
+            )
 
     return move, comment
 

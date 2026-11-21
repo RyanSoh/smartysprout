@@ -59,13 +59,13 @@ engine:                            # Engine settings.
       min_depth: 5
       min_knodes: 0
     lichess_opening_explorer:
-      enabled: false
-      min_time: 20
+      enabled: true
+      min_time: 0
       max_time: 10800              # Maximum starting game time (in seconds) the bot must have to use the lichess opening explorer.
       source: "masters"            # One of "lichess", "masters", "player"
       player_name: ""              # The lichess username. Leave empty for the bot's username to be used. Used only when source is "player".
-      sort: "winrate"              # One of "winrate", "games_played"
-      min_games: 10                # Minimum number of times a move must have been played to be chosen.
+      sort: "games_played"         # One of "winrate", "games_played"
+      min_games: 20                # Minimum number of times a move must have been played to be chosen.
     online_egtb:
       enabled: true                # Whether or not to enable online endgame tablebases
       min_time: 0                  # Minimum time (in seconds) the bot must have to use online EGTBs.
@@ -97,10 +97,10 @@ engine:                            # Engine settings.
 
   uci_options:                     # Arbitrary UCI options passed to the engine.
     Move_Overhead: 100             # Increase if your bot flags games too often.
-    Threads: 2                     # Max CPU threads the engine can use.
-    Hash: 512                      # Max memory (in megabytes) the engine can allocate.
+    Threads: 1                     # Max CPU threads the engine can use.
+    Hash: 128                      # Max memory (in megabytes) the engine can allocate.
     Skill_Level: 20
-    SyzygyPath: "./syzygy/"        # Paths to Syzygy endgame tablebases that the engine reads.
+    # SyzygyPath: "./syzygy/"        # Paths to Syzygy endgame tablebases that the engine reads.
     # UCI_ShowWDL: true              # Show the chance of the engine winning.
 #   go_commands:                   # Additional options to pass to the UCI go command.
 #     nodes: 1                     # Search so many nodes only.
