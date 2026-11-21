@@ -164,6 +164,13 @@ class EngineWrapper:
         best_move: MOVE
         best_move = get_book_move(board, game, polyglot_cfg)
 
+        # Randomly choose 1.e4 or 1.d4 as White's first move.
+        if board.fullmove_number == 1 and board.turn == chess.WHITE and not board.move_stack:
+            first_move = random.choice(["e2e4", "d2d4"])
+            best_move = chess.engine.PlayResult(
+                chess.Move.from_uci(first_move), None
+            )
+
         if best_move.move is None:
             best_move = get_egtb_move(board,
                                       game,
