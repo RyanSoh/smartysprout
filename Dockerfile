@@ -1,5 +1,5 @@
 # Use an official Python runtime as a parent image
-FROM python:3.12-slimgit 
+FROM python:3.12-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -20,7 +20,7 @@ RUN apt-get update \
 COPY . /app/
 
 # Make Patricia executable
-chmod +x ./engines/_internal/static/patricia/patricia
+RUN chmod +x /app/engines/_internal/static/patricia/patricia
 
 # Create a virtual environment and set it as the Python environment
 RUN python -m venv /opt/venv
