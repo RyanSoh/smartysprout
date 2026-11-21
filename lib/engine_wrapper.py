@@ -1002,7 +1002,7 @@ def get_opening_explorer_move(li: lichess.Lichess, board: chess.Board, game: mod
 
         # Randomly select from the eight most popular moves.
         if moves:
-            top_moves = moves[:8]
+            top_moves = moves[:5]
             selected_move = random.choice(top_moves)
             move = selected_move[2]
 
