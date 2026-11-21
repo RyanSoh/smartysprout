@@ -99,7 +99,7 @@ engine:                            # Engine settings.
     Move_Overhead: 100             # Increase if your bot flags games too often.
     Threads: 1                     # Max CPU threads the engine can use.
     Hash: 128                      # Max memory (in megabytes) the engine can allocate.
-    Skill_Level: 20
+    Skill_Level: 21
     # SyzygyPath: "./syzygy/"        # Paths to Syzygy endgame tablebases that the engine reads.
     # UCI_ShowWDL: true              # Show the chance of the engine winning.
 #   go_commands:                   # Additional options to pass to the UCI go command.
